@@ -29,8 +29,8 @@ Boid::Boid()
 	{
 		for (int j = 0; j < 2; j++)
 		{
-			boidData[i].velocity[j] = (static_cast<float>(rand()) / static_cast <float> (RAND_MAX)) * 256;
-			boidData[i].position[j] = (static_cast<float>(rand()) / static_cast <float> (RAND_MAX))* 256;
+			boidData[i].velocity[j] = (static_cast<float>(rand()) / static_cast <float> (RAND_MAX)) * 512;
+			boidData[i].position[j] = (static_cast<float>(rand()) / static_cast <float> (RAND_MAX))* 512;
 		}
 		boidData[i].velocity[2] = 0;
 		boidData[i].position[2] = 0;

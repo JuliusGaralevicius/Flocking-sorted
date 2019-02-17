@@ -89,7 +89,7 @@ private:
 		Vector4(1, -1, -1, 1.0f)
 	};
 
-	unsigned static const int FLOCKSIZE = 16384*2;
+	unsigned static const int FLOCKSIZE = 16384;
 	unsigned static const int CELLCOUNTDIMENSION = 16; // ^2 = total cells
 	struct boid_data_t
 	{

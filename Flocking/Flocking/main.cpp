@@ -60,7 +60,8 @@ int main()
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 		glClear(GL_COLOR_BUFFER_BIT);
-
+		if (i%100 == 0)
+		glfwSetWindowTitle(window, std::to_string(1/dt).c_str());
 		quad->render(vp, dt);
 		b->render(dt, lastClick, vp);
 	}
