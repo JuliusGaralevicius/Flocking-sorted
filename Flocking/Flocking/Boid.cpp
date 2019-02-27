@@ -2,8 +2,11 @@
 #include <time.h>
 #include "Shader.h"
 #include <GLFW/glfw3.h>
-Boid::Boid()
+#include "Obstacles.h"
+Boid::Boid(Obstacles* obs)
 {
+
+	this->obs = obs;
 	Shader *cShader = new Shader("ComputeTest.glsl");
 	Shader *rShader = new Shader("VertexShader.glsl", "FragShader.glsl", "");
 	Shader *hashShader = new Shader("ComputeHash.glsl");
@@ -29,7 +32,7 @@ Boid::Boid()
 	{
 		for (int j = 0; j < 2; j++)
 		{
-			boidData[i].velocity[j] = (static_cast<float>(rand()) / static_cast <float> (RAND_MAX)) * 512;
+			boidData[i].velocity[j] = 0;// (static_cast<float>(rand()) / static_cast <float> (RAND_MAX));
 			boidData[i].position[j] = (static_cast<float>(rand()) / static_cast <float> (RAND_MAX))* 512;
 		}
 		boidData[i].velocity[2] = 0;
@@ -38,6 +41,9 @@ Boid::Boid()
 		boidData[i].position[3] = 0;
 	}
 	// initiate positions
+
+
+
 
 	// setup BOID SSBO
 	glGenBuffers(2,  ssboBoids);
@@ -50,6 +56,11 @@ Boid::Boid()
 	// setup sum SSBO
 	glGenBuffers(1, &sumSSBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, sumSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint)*CELLCOUNTDIMENSION*CELLCOUNTDIMENSION, NULL, GL_DYNAMIC_COPY);
+
+	// setup original sum SSBO (store all beginning indexes for each cell, same as sum SSBO before sorting)
+	glGenBuffers(1, &sumSSBOOG);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, sumSSBOOG);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint)*CELLCOUNTDIMENSION*CELLCOUNTDIMENSION, NULL, GL_DYNAMIC_COPY);
 
 	// generate atomic counter
@@ -77,8 +88,9 @@ Boid::Boid()
 
 		glBindBuffer(GL_ARRAY_BUFFER, ssboBoids[i]);
 
-		glVertexAttribPointer((GLuint)3, 4, GL_FLOAT, GL_FALSE, sizeof(boid_data_t), 0);
 		glVertexAttribPointer((GLuint)2, 4, GL_FLOAT, GL_FALSE, sizeof(boid_data_t), (void*)(sizeof(Vector4)));
+		glVertexAttribPointer((GLuint)3, 4, GL_FLOAT, GL_FALSE, sizeof(boid_data_t), 0);
+
 
 		glVertexAttribDivisor(2, 1);
 		glVertexAttribDivisor(3, 1);
@@ -95,7 +107,7 @@ void Boid::render(double deltaTime, Vector4 goal, Matrix4 vp)
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicCounter);
 	glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 256, emptyArr);
 
-	bool DEBUG =false;
+	bool DEBUG = false;
 	// Compute hash for each Boid
 	glUseProgram(computeHash);
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicCounter);
@@ -129,6 +141,7 @@ void Boid::render(double deltaTime, Vector4 goal, Matrix4 vp)
 
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicCounter);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, sumSSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, sumSSBOOG);
 
 	glDispatchCompute(1, 1, 1);
 	glMemoryBarrier(GL_COMPUTE_SHADER_BIT);
@@ -174,7 +187,18 @@ void Boid::render(double deltaTime, Vector4 goal, Matrix4 vp)
 		int n;
 
 		//std::cin >> n;
-		std::cout << std::endl << "-----------------------------------------" << std::endl;
+		std::cout << std::endl << "---------------------START OF OG BUFFER--------------" << std::endl;
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, sumSSBOOG);
+		pt = (GLuint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		for (int i = 0; i < CELLCOUNTDIMENSION*CELLCOUNTDIMENSION; i++)
+		{
+			std::cout << " " << pt[i];
+			if ((i + 1) % 10 == 0)
+				std::cout << std::endl;
+		}
+		std::cout << std::endl << "-----------------END OF OG BUFFER ----------------------" << std::endl;
 	}
 
 	// calculate new positions
@@ -184,14 +208,16 @@ void Boid::render(double deltaTime, Vector4 goal, Matrix4 vp)
 	glUniform4f(goalLoc, goal.x, goal.y, goal.z, goal.w);
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboBoids[!odd]);
-	glDispatchCompute(64, 1, 1);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, sumSSBOOG);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, obs->obstacleSSBO);
+	glDispatchCompute(FLOCKSIZE/256, 1, 1);
 	glMemoryBarrier(GL_COMPUTE_SHADER_BIT);
 	// render
 	glUseProgram(IDShader);
 	glBindVertexArray(renderVAO[!odd]);
 
 
-	Matrix4 mvp = model * vp;
+	Matrix4 mvp = vp*model;
 	glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, mvp.values);
 	glDrawArraysInstanced(GL_TRIANGLES, 0, positions.size(), FLOCKSIZE);
 	glBindVertexArray(0);

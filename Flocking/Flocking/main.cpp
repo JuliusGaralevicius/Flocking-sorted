@@ -13,11 +13,12 @@
 #include "Shader.h"
 #include <string>
 #include "DebugShape.h"
+#include "Obstacles.h"
 
 using namespace std;
 
 // Window dimensions
-GLuint WIDTH = 1680, HEIGHT = 1050;
+GLuint WIDTH = 1920, HEIGHT = 1080;
 
 unsigned int currentShader = 0;
 
@@ -28,7 +29,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 Vector3 cameraTranslate(0, 0, 0);
 Vector4 lastClick(256, 256, 0, 0);
 
-Matrix4 view = Matrix4::Translation(Vector3(-256, -256, -1400));
+Matrix4 view = Matrix4::Translation(Vector3(-256, -256, -650));
 Matrix4 projection = Matrix4::Perspective(30.0, 3000.0f, WIDTH/ HEIGHT, 45.0f);
 
 
@@ -44,15 +45,16 @@ int main()
 	glViewport(0, 0, WIDTH, HEIGHT);
 
 	initglew();
+	Obstacles* obs = new Obstacles();
+	Boid* b = new Boid(obs);
 
-	Boid* b = new Boid();
 	DebugShape *quad = new DebugShape();
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	double previousTime= glfwGetTime();
 	double currentTime = glfwGetTime();
 	double dt = 0;
 
-	glfwSwapInterval(1);
+	glfwSwapInterval(0);
 	for (unsigned long int i = 0; !glfwWindowShouldClose(window); i++) {
 		currentTime= glfwGetTime();
 		dt = currentTime - previousTime;
@@ -60,10 +62,12 @@ int main()
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 		glClear(GL_COLOR_BUFFER_BIT);
-		if (i%100 == 0)
+		glClearColor(183.0/255.01, 225.0/255.01, 252.0/255.01, 1.0);
+		if (i%60 == 0)
 		glfwSetWindowTitle(window, std::to_string(1/dt).c_str());
-		quad->render(vp, dt);
+		//quad->render(vp, dt);
 		b->render(dt, lastClick, vp);
+		obs->Render(dt, vp);
 	}
 
 	glfwTerminate();

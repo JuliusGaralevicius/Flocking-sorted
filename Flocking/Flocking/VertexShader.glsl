@@ -31,7 +31,7 @@ void main()
 		float y = group/16;
 		float x = group - (group/16)*16;
 		
-		outColour = vec4(x/16, y/16, 0.5, 1.0);
+		outColour = vec4(x/16, y/16, y/32, 1.0);
 
 	}
 	else {

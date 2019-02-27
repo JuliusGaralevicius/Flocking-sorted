@@ -141,6 +141,7 @@
     <ClCompile Include="Matrix2.cpp" />
     <ClCompile Include="Matrix3.cpp" />
     <ClCompile Include="Matrix4.cpp" />
+    <ClCompile Include="Obstacles.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -150,6 +151,7 @@
     <ClInclude Include="Matrix2.h" />
     <ClInclude Include="Matrix3.h" />
     <ClInclude Include="Matrix4.h" />
+    <ClInclude Include="Obstacles.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="Vector3.h" />

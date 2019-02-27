@@ -6,6 +6,10 @@ layout (binding = 1) buffer bufferName
 {
 	uint sum[256];
 };
+layout (binding = 2) buffer bufferName1
+{
+	uint sumOG[256];
+};
 
 shared uint shared0[256];
 shared uint shared1[256];
@@ -38,6 +42,7 @@ void main()
 	
 	barrier();
 	sum[myID+1] = shared1[myID];
+	sumOG[myID+1] = shared1[myID];
 	if (myID == 0)
 	{
 		sum[0] = 0;
